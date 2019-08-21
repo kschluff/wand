@@ -1,0 +1,38 @@
+Overview
+========
+
+This Kinect hacking project was inspired by my daughter asking me to "put magic in" her fairy wand.  Here's how it works (hint: not actual fairy magic).
+
+Rather than trying to detect a wand specifically, I just track the nearest point to the Kinect.  This has the advantage of being fast and intuitive -- "hold the wand closer to the TV, honey".  The drawback is that it's noisy and the Kinect depth sensor will often report a more distant point as the nearest.  
+
+To smooth the position and to estimate velocity and acceleration of the wand, a Kalman filter is used.  The estimated velocity and acceleration are imparted to new pixie dust particles as they're generated.  The initial goal was to mimic the physics of pixie dust in the Tinkerbell movies, but that turns out to be very odd.  The particles there have no initial velocity and  just drop straight down.  Instead, the following model is used:
+
+x(t) = x(t-1) + x_vel*dt + 1/2 * x_accel * dt^2
+y(t) = y(t-1) + y_vel*dt + 1/2 * y_accel * dt^2
+x_vel(t) = k*x_vel(t-1) + x_accel * dt
+y_vel(t) = y_vel(t-1) + y_accel * dt
+x_accel(t) = 0 (constant velocity)
+y_accel(t) = y_accel(t-1) (constant accel due to gravity)
+
+Horizontal acceleration is set to zero and a gain factor is applied to the velocity so particles slow more quickly, as if due to air resistance.  Vertical acceleration is held constant to represent gravity, but less than 9.81 m/s^2 due to air resistance.
+
+New particles are generated at a constant rate by linearly interpolating points between the current and previous positions, then randomly perturbing the initial states.
+
+OpenCV doesn't support much in the way of drawing abilities, so the pixie dust is just drawn pixel-by-pixel.  Since alpha channels aren't supported for drawing functions, the particles are "manually" blended with the background.  
+
+Building
+========
+
+Just a very basic makefile.  That should work on Mac or Linux.  It's set up for my Macbook. You might have to edit it for your system.  
+
+Usage
+-----
+./wand [output_filename]
+
+The optional output file is encoded as mjpeg, based on a frame rate that worked on my machine -- YMMV.
+
+Dependencies
+============
+This uses OpenCV with the built-in OpenNI support, so OpenNI Kinectsensor support must be installed on your system.  
+
+
